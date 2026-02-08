@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Port Manager - 端口管理工具</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <h1>Port Manager</h1>
+            <div class="header-info">
+                <span id="osType">Loading...</span>
+                <span id="portCount">0 ports</span>
+                <button id="themeToggle" class="btn-icon" title="切换主题">🌓</button>
+            </div>
+        </header>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索端口号 / 进程名 / PID..." />
+                <button id="searchBtn" class="btn">搜索</button>
+            </div>
+            <div class="action-buttons">
+                <button id="batchKillBtn" class="btn btn-danger" style="display: none;">
+                    <span id="batchKillText">关闭选中 (0)</span>
+                </button>
+                <button id="refreshBtn" class="btn btn-primary">🔄 刷新</button>
+                <button id="autoRefreshToggle" class="btn">⏸️ 暂停自动刷新</button>
+            </div>
+        </div>
+
+        <!-- 筛选器栏 -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label for="portTypeFilter">端口类型:</label>
+                <select id="portTypeFilter" class="filter-select">
+                    <option value="">全部</option>
+                    <option value="FRONTEND">前端</option>
+                    <option value="BACKEND">后端</option>
+                    <option value="DATABASE">数据库</option>
+                    <option value="OTHER">其他</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="processTypeFilter">进程类型:</label>
+                <select id="processTypeFilter" class="filter-select">
+                    <option value="">全部</option>
+                    <option value="JAVA">Java</option>
+                    <option value="NODE">Node.js</option>
+                    <option value="PYTHON">Python</option>
+                    <option value="WEB_SERVER">Web服务器</option>
+                    <option value="DATABASE">数据库</option>
+                    <option value="IDE">IDE</option>
+                    <option value="BROWSER">浏览器</option>
+                    <option value="SYSTEM">系统</option>
+                    <option value="OTHER">其他</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="protocolFilter">协议:</label>
+                <select id="protocolFilter" class="filter-select">
+                    <option value="">全部</option>
+                    <option value="TCP">TCP</option>
+                    <option value="UDP">UDP</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="devProcessFilter">开发进程:</label>
+                <select id="devProcessFilter" class="filter-select">
+                    <option value="">全部</option>
+                    <option value="true">是</option>
+                    <option value="false">否</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="commonPortFilter">常用端口:</label>
+                <select id="commonPortFilter" class="filter-select">
+                    <option value="">选择端口...</option>
+                    <option value="80">80 - HTTP</option>
+                    <option value="443">443 - HTTPS</option>
+                    <option value="3000">3000 - React/Node</option>
+                    <option value="3306">3306 - MySQL</option>
+                    <option value="5432">5432 - PostgreSQL</option>
+                    <option value="6379">6379 - Redis</option>
+                    <option value="8080">8080 - Tomcat</option>
+                    <option value="8888">8888 - Jupyter</option>
+                    <option value="9090">9090 - Prometheus</option>
+                    <option value="27017">27017 - MongoDB</option>
+                </select>
+            </div>
+            <button id="clearFiltersBtn" class="btn btn-secondary">清除筛选</button>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">总端口数:</span>
+                <span id="statTotal" class="stat-value">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">开发进程:</span>
+                <span id="statDev" class="stat-value">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">TCP:</span>
+                <span id="statTcp" class="stat-value">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">UDP:</span>
+                <span id="statUdp" class="stat-value">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">上次扫描:</span>
+                <span id="lastScan" class="stat-value">--</span>
+            </div>
+        </div>
+
+        <!-- 端口列表表格 -->
+        <div class="table-container">
+            <table id="portTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">
+                            <input type="checkbox" id="selectAll" title="全选/取消全选">
+                        </th>
+                        <th>端口</th>
+                        <th>类型</th>
+                        <th>协议</th>
+                        <th>状态</th>
+                        <th>PID</th>
+                        <th>进程名</th>
+                        <th>命令行</th>
+                        <th>用户</th>
+                        <th>开发进程</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="portTableBody">
+                    <tr>
+                        <td colspan="11" class="loading">正在加载端口信息...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 底部状态栏 -->
+        <footer class="footer">
+            <span id="statusMessage">就绪</span>
+            <span id="autoRefreshStatus">自动刷新: 开启 (5秒)</span>
+        </footer>
+    </div>
+
+    <!-- 确认对话框 -->
+    <div id="confirmDialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog">
+            <h3>确认关闭进程</h3>
+            <p id="confirmMessage">确定要关闭进程吗?</p>
+            <div id="systemServiceOptions" class="system-service-options" style="display: none;">
+                <div class="option-item">
+                    <input type="radio" id="optionTemporary" name="killOption" value="temporary" checked>
+                    <label for="optionTemporary">
+                        <strong>临时关闭</strong>
+                        <span class="option-desc">仅关闭进程，服务可能会自动重启</span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <input type="radio" id="optionPermanent" name="killOption" value="permanent">
+                    <label for="optionPermanent">
+                        <strong>永久停止</strong>
+                        <span class="option-desc">停止系统服务，不会自动重启（推荐）</span>
+                    </label>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button id="confirmYes" class="btn btn-danger">确定</button>
+                <button id="confirmNo" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量关闭确认对话框 -->
+    <div id="batchConfirmDialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog batch-dialog">
+            <h3>批量关闭进程</h3>
+            <p id="batchConfirmMessage">确定要关闭选中的进程吗?</p>
+            <div id="batchPortList" class="batch-port-list"></div>
+            <div id="batchSystemServiceOptions" class="system-service-options" style="display: none;">
+                <div class="option-item">
+                    <input type="radio" id="batchOptionTemporary" name="batchKillOption" value="temporary" checked>
+                    <label for="batchOptionTemporary">
+                        <strong>临时关闭</strong>
+                        <span class="option-desc">仅关闭进程，服务可能会自动重启</span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <input type="radio" id="batchOptionPermanent" name="batchKillOption" value="permanent">
+                    <label for="batchOptionPermanent">
+                        <strong>永久停止</strong>
+                        <span class="option-desc">停止系统服务，不会自动重启（推荐）</span>
+                    </label>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button id="batchConfirmYes" class="btn btn-danger">确定关闭</button>
+                <button id="batchConfirmNo" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

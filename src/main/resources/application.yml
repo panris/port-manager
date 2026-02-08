@@ -1,0 +1,51 @@
+server:
+  port: 9527
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: port-manager-web
+
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+
+  # 静态资源配置
+  web:
+    resources:
+      static-locations: classpath:/static/
+
+# 端口扫描配置
+port-manager:
+  scan:
+    # 扫描间隔(毫秒)
+    interval: 5000
+    # 常用端口范围
+    common-ports: 80,443,3000,3306,5432,6379,8000,8080,8888,9000,9527
+    # 开发进程关键字
+    dev-process-keywords: idea,java,tace,claude,springboot,node,python,maven,gradle
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.portmanager: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
